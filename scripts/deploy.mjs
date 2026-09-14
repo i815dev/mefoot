@@ -5,6 +5,14 @@ import { resolve, sep } from 'node:path';
 
 const target = process.argv[2];
 if (!['staging', 'production'].includes(target)) throw new Error('Choose staging or production.');
+const options = process.argv.slice(3);
+if (options.length > 1 || options.some(option => option !== '--oauth')) {
+  throw new Error('The only supported deployment option is --oauth.');
+}
+const oauth = options.includes('--oauth');
+if (oauth && (target !== 'staging' || process.env.CI || process.env.GITHUB_ACTIONS)) {
+  throw new Error('--oauth is only allowed for local staging deployment, never production or CI.');
+}
 const expected = process.env.RELEASE_SHA;
 if (!/^[a-f0-9]{40}$/.test(expected || '')) throw new Error('A full RELEASE_SHA is required for deployment.');
 const manifest = JSON.parse(readFileSync('build/manifest.json', 'utf8'));
@@ -31,8 +39,10 @@ checkUnlisted(root);
 if (manifest.workerFile !== 'worker/index.js' || !manifest.files[manifest.workerFile] || !manifest.files['assets/index.html']) {
   throw new Error('Required release entry points are missing.');
 }
-if (!process.env.CLOUDFLARE_ACCOUNT_ID || !process.env.CLOUDFLARE_API_TOKEN) {
-  throw new Error('Set the Cloudflare account ID and deployment token in GitHub settings first.');
+if (!process.env.CLOUDFLARE_ACCOUNT_ID || (!oauth && !process.env.CLOUDFLARE_API_TOKEN)) {
+  throw new Error(oauth
+    ? 'Set CLOUDFLARE_ACCOUNT_ID for the logged-in Cloudflare account first.'
+    : 'Set the Cloudflare account ID and deployment token in GitHub settings first.');
 }
 const urlText = process.env[target === 'staging' ? 'STAGING_URL' : 'PRODUCTION_URL'];
 if (!urlText) throw new Error('Set the deployment URL in GitHub repository variables first.');
@@ -60,10 +70,16 @@ const config = {
 };
 const configFile = `.deploy/${target}.json`;
 writeFileSync(configFile, JSON.stringify(config, null, 2));
+const deploymentEnv = { ...process.env, WRANGLER_SEND_METRICS: 'false' };
+if (oauth) {
+  for (const name of ['CLOUDFLARE_API_TOKEN', 'CF_API_TOKEN', 'CLOUDFLARE_API_KEY', 'CF_API_KEY', 'CLOUDFLARE_EMAIL', 'CF_EMAIL']) {
+    delete deploymentEnv[name];
+  }
+}
 execFileSync(process.execPath, [
   'node_modules/wrangler/bin/wrangler.js', 'deploy', '--config', configFile, '--no-bundle',
-], { stdio: 'inherit', env: { ...process.env, WRANGLER_SEND_METRICS: 'false' } });
+], { stdio: 'inherit', env: deploymentEnv });
 execFileSync(process.execPath, ['scripts/smoke.mjs'], {
   stdio: 'inherit',
-  env: { ...process.env, SMOKE_URL: url.origin, EXPECTED_VERSION: expected, EXPECTED_ENV: target },
+  env: { ...deploymentEnv, SMOKE_URL: url.origin, EXPECTED_VERSION: expected, EXPECTED_ENV: target },
 });

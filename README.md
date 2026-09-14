@@ -69,6 +69,18 @@ API 토큰은 대상 계정과 필요한 권한에 한정해서 만들고 Global
 
 ### 테스트 배포
 
+Wrangler 로그인을 마친 로컬 컴퓨터에서는 초기 테스트 배포에 `--oauth`를 사용할 수 있습니다. 실제 계정 ID와 Workers 주소를 확인한 뒤 실행합니다.
+
+```sh
+export RELEASE_SHA="$(git rev-parse HEAD)"
+export CLOUDFLARE_ACCOUNT_ID="<실제-Cloudflare-계정-ID>"
+export STAGING_URL="https://mefoot-staging.<실제-workers-하위도메인>.workers.dev"
+npm run release
+npm run deploy:staging -- --oauth
+```
+
+이 옵션은 Wrangler가 저장한 로그인 정보를 사용하며 로컬 staging에서만 허용됩니다. 운영 또는 `CI`·`GITHUB_ACTIONS` 환경에서는 거부합니다. GitHub Actions에는 별도 `CF_API_TOKEN` secret이 필요하며, `--oauth`를 생략하면 기존처럼 계정 ID와 API 토큰을 모두 요구합니다.
+
 `main`에 업로드하면 검사 → 배포 파일 생성 → 테스트 환경 배포 → 실제 URL 검사가 실행됩니다. `CF_ACCOUNT_ID` 또는 `STAGING_URL`이 없으면 테스트 배포를 건너뛰고 코드 검사만 합니다. 두 값이 있다면 토큰도 필요합니다.
 
 ### 운영 배포
