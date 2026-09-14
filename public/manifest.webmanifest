@@ -1,0 +1,13 @@
+{
+  "id": "/",
+  "name": "Mefoot · 미풋",
+  "short_name": "미풋",
+  "description": "함께 뛸 사람, 함께할 팀",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f8f3",
+  "theme_color": "#153e35",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
