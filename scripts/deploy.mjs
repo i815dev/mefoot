@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
+import { deploymentConfig } from './deployment-config.mjs';
 
 const target = process.argv[2];
 if (!['staging', 'production'].includes(target)) throw new Error('Choose staging or production.');
@@ -56,18 +57,7 @@ if (customDomain && (url.hostname !== customDomain || !/^[a-z0-9.-]+$/.test(cust
 }
 
 mkdirSync('.deploy', { recursive: true });
-const config = {
-  name: target === 'production' ? 'mefoot' : 'mefoot-staging',
-  main: resolve('build', manifest.workerFile),
-  compatibility_date: manifest.compatibilityDate,
-  workers_dev: !customDomain,
-  assets: {
-    directory: resolve('build/assets'), binding: 'ASSETS',
-    not_found_handling: 'single-page-application', run_worker_first: ['/api/*'],
-  },
-  vars: { APP_ENV: target },
-  ...(customDomain ? { routes: [{ pattern: customDomain, custom_domain: true }] } : {}),
-};
+const config = deploymentConfig({ target, manifest, customDomain, apiOriginText: process.env.API_ORIGIN });
 const configFile = `.deploy/${target}.json`;
 writeFileSync(configFile, JSON.stringify(config, null, 2));
 const deploymentEnv = { ...process.env, WRANGLER_SEND_METRICS: 'false' };
@@ -81,5 +71,6 @@ execFileSync(process.execPath, [
 ], { stdio: 'inherit', env: deploymentEnv });
 execFileSync(process.execPath, ['scripts/smoke.mjs'], {
   stdio: 'inherit',
-  env: { ...deploymentEnv, SMOKE_URL: url.origin, EXPECTED_VERSION: expected, EXPECTED_ENV: target },
+  env: { ...deploymentEnv, SMOKE_URL: url.origin, EXPECTED_VERSION: expected, EXPECTED_ENV: target,
+    EXPECT_API: config.vars.API_ORIGIN ? '1' : '0' },
 });

@@ -44,6 +44,10 @@ GHCR 패키지가 비공개라면 Portainer의 Registries에 `ghcr.io` 읽기 �
 
 `EDGE_SHARED_KEY`는 서버 사이에서만 사용합니다. 동일 값을 Worker 비밀 설정에도 넣고 프런트엔드 코드나 공개 환경 변수에 포함하지 않습니다. Portainer 관리자에게는 Stack 환경 변수가 보일 수 있으므로 해당 값을 문서·로그·Git에 복사하지 않습니다.
 
+API의 HTTPS 및 DB 연결을 확인한 다음 GitHub Actions의 저장소 변수 `API_ORIGIN`을 `https://oci-seoul-a1.i815.com`으로, 저장소 Secret `API_EDGE_SHARED_KEY`를 Stack과 같은 공유 키로 설정합니다. 이후 staging 배포는 공유 키를 Worker의 `EDGE_SHARED_KEY`에 저장하고, 생성하는 배포 설정에도 API 주소를 전달합니다. 실제 비밀값 저장은 지정된 서비스에 대한 승인을 받은 후 진행합니다.
+
+`API_ORIGIN`이 비어 있는 동안에는 기존 웹·Worker만 배포합니다. 이 변수가 설정되면 배포 후 `/api/health/db` 응답까지 검사하므로 Worker·API·DB 연결 실패가 배포 성공으로 표시되지 않습니다. API 이미지 버전까지 비교하려면 검사 실행 시 `EXPECTED_API_VERSION`에 실행 중이어야 하는 전체 이미지 SHA를 지정합니다. `wrangler.jsonc`만 수정하는 것으로는 자동 배포 설정이 바뀌지 않습니다.
+
 DB 접속은 내부 Docker 이름으로 연결하면서 TLS 서버 이름을 `postgre.i815.com`으로 검증합니다. 따라서 `PGHOST=mefoot-postgres`와 `PGTLS_SERVERNAME=postgre.i815.com`이 달라도 정상입니다. 인증서 검증을 끄는 옵션은 사용하지 않습니다.
 
 ## 소셜 로그인 설정

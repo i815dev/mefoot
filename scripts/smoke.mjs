@@ -29,13 +29,22 @@ async function verify() {
   assert.match(script.headers.get('content-type') || '', /javascript/);
   const missing = await get('/api/not-implemented');
   assert.equal(missing.status, 404, 'Unknown API must not return the SPA page');
+  if (process.env.EXPECT_API === '1') {
+    const dbResponse = await get('/api/health/db');
+    assert.equal(dbResponse.status, 200, 'Worker must reach the API and database');
+    const db = await dbResponse.json();
+    assert.equal(db.status, 'ok');
+    assert.equal(db.scope, 'api-and-database');
+    assert.match(db.version, /^[a-f0-9]{40}$/, 'API must report its deployed image SHA');
+    if (process.env.EXPECTED_API_VERSION) assert.equal(db.version, process.env.EXPECTED_API_VERSION, 'Deployed API SHA');
+  }
 }
 
 let lastError;
 for (let attempt = 0; attempt < 6; attempt++) {
   try {
     await verify();
-    console.log(`Verified web + Worker ${expected} on ${origin.origin} (${expectedEnv}). Database and login are not part of this check.`);
+    console.log(`Verified web + Worker ${expected} on ${origin.origin} (${expectedEnv}). ${process.env.EXPECT_API === '1' ? 'API and database connection verified.' : 'Database connection was not checked.'} Real social login was not checked.`);
     process.exit(0);
   } catch (error) {
     lastError = error;

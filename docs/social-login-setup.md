@@ -19,7 +19,7 @@
 ## 1. 카카오 로그인 앱 만들기
 
 1. [Kakao Developers](https://developers.kakao.com/)에서 Mefoot 애플리케이션을 만듭니다.
-2. 앱의 카카오 로그인을 활성화하고 **OpenID Connect도 활성화**합니다. 현재 공식 메뉴는 `카카오 로그인 → 일반 → OpenID Connect`입니다.
+2. 앱의 카카오 로그인을 활성화하고 **OpenID Connect도 활성화**합니다. 현재 공식 메뉴는 `카카오 로그인 → OpenID Connect`입니다.
 3. 위 표의 카카오 Redirect URI를 등록합니다. Web 사이트 도메인을 입력하는 항목에는 `https://mefoot-staging.teol79.workers.dev`를 사용합니다.
 4. `앱 → 플랫폼 키 → REST API 키`에서 REST API 키와 해당 키의 Client secret을 확인합니다. Client secret 활성 상태를 유지합니다.
 5. 아래 세 값을 서버 환경 변수로 준비합니다.
@@ -95,7 +95,9 @@ Apple은 무료 개발자 계정 생성만으로 필요한 설정이 모두 준�
 
 현재 [서버 설정](../server/config.ts)은 `TERMS_VERSION`과 `PRIVACY_NOTICE_VERSION`이 **모두 있어야** 제공자 설정을 읽습니다. 하나라도 비어 있으면 모든 소셜 로그인 제공자를 비활성으로 둡니다. 테스트용 임의 버전을 넣어 이 조건만 통과시키지 않습니다.
 
-다음 제품 작업은 실제 약관·개인정보 처리 안내 본문 게시와 `/auth/complete` 가입 완료 화면 구현입니다. 화면은 서버의 `/api/auth/registration`에서 현재 문서 버전과 제안 닉네임을 받아 보여주고, 사용자가 두 문서에 동의한 뒤 다음 내용을 `POST /api/auth/register`로 보냅니다.
+다음 제품 작업은 실제 약관·개인정보 처리 안내 본문 게시와 `/auth/complete` 가입 완료 화면 구현입니다. 팀 안내·관심 등록·가입 신청·관리자 승인 화면도 아직 구현되지 않았으며, 현재 `/t/` 경로는 준비 안내 문구만 표시합니다. 아래의 QR 진입부터 관리자 승인까지 전체 흐름을 화면에서 검증하려면 이 화면들도 필요합니다.
+
+가입 완료 화면은 서버의 `/api/auth/registration`에서 현재 문서 버전과 제안 닉네임을 받아 보여주고, 사용자가 두 문서에 동의한 뒤 다음 내용을 `POST /api/auth/register`로 보냅니다.
 
 ```json
 {

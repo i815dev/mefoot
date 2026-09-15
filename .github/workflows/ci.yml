@@ -58,9 +58,25 @@ jobs:
         with:
           name: mefoot-${{ github.sha }}
           path: build/
+      - name: Configure API connection when enabled
+        shell: bash
+        run: |
+          if [ -n "$API_ORIGIN" ]; then
+            if [ -z "$API_EDGE_SHARED_KEY" ]; then
+              echo 'API_ORIGIN requires the API_EDGE_SHARED_KEY Actions secret.' >&2
+              exit 1
+            fi
+            printf '%s' "$API_EDGE_SHARED_KEY" | npx wrangler secret put EDGE_SHARED_KEY --env staging
+          fi
+        env:
+          API_ORIGIN: ${{ vars.API_ORIGIN }}
+          API_EDGE_SHARED_KEY: ${{ secrets.API_EDGE_SHARED_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
       - run: npm run deploy:staging
         env:
           RELEASE_SHA: ${{ github.sha }}
+          API_ORIGIN: ${{ vars.API_ORIGIN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           STAGING_URL: ${{ vars.STAGING_URL }}
