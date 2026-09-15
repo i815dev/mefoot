@@ -1,0 +1,70 @@
+# Portainer Stack name: mefoot-api
+# Set API_IMAGE_TAG, PGPASSWORD and EDGE_SHARED_KEY in the Stack environment.
+# API_IMAGE_TAG is the full commit SHA published by the Build API image workflow.
+
+services:
+  api:
+    image: ghcr.io/i815dev/mefoot-api:${API_IMAGE_TAG:?Set API_IMAGE_TAG in Portainer}
+    container_name: mefoot-api
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    cpus: 0.5
+    mem_limit: 512m
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      APP_VERSION: "${API_IMAGE_TAG:?Set API_IMAGE_TAG in Portainer}"
+      APP_ORIGIN: "${APP_ORIGIN:-https://mefoot-staging.teol79.workers.dev}"
+      EDGE_SHARED_KEY: "${EDGE_SHARED_KEY:?Set EDGE_SHARED_KEY in Portainer}"
+      PGHOST: mefoot-postgres
+      PGPORT: "5432"
+      PGDATABASE: mefoot
+      PGUSER: mefoot_app
+      PGPASSWORD: "${PGPASSWORD:?Set PGPASSWORD in Portainer}"
+      PGSSLROOTCERT: /run/postgres-ca/server.crt
+      PGTLS_SERVERNAME: postgre.i815.com
+    volumes:
+      - type: bind
+        source: /home/ubuntu/docker/postgres/data/.access/tls/server.crt
+        target: /run/postgres-ca/server.crt
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      - caddy-net
+      - mefoot-db
+    labels:
+      caddy: oci-seoul-a1.i815.com
+      caddy_ingress_network: caddy-net
+      caddy.reverse_proxy: "{{upstreams http 3000}}"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/healthz', { signal: AbortSignal.timeout(3000) }).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  caddy-net:
+    external: true
+    name: caddy-net
+  mefoot-db:
+    external: true
+    name: mefoot-db

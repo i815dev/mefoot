@@ -1,0 +1,74 @@
+name: Build API image
+run-name: Build API image ${{ github.sha }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'database/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile.api'
+      - '.dockerignore'
+      - '.github/workflows/api-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+  image:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up ARM64 emulation
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v4
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push the commit image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.api
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/i815dev/mefoot-api:${{ github.sha }}
+          build-args: |
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=mefoot-api-arm64
+          cache-to: type=gha,mode=max,scope=mefoot-api-arm64

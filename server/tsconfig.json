@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "module": "NodeNext", "moduleResolution": "NodeNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"], "types": ["node"],
+    "strict": true, "skipLibCheck": true, "noEmit": true,
+    "allowImportingTsExtensions": true, "erasableSyntaxOnly": true
+  },
+  "include": ["./*.ts", "../tests/auth.test.ts", "../tests/teams.test.ts", "../tests/api.test.ts", "../tests/integration.test.ts"]
+}

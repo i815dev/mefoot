@@ -2,7 +2,9 @@
 
 축구·풋살 용병 모집과 팀 연결 서비스의 시작 프로젝트입니다.
 
-현재 포함된 기능은 반응형 서비스 소개 화면, 팀 URL 진입 안내, Cloudflare Worker 상태·버전 API, 자동 검사와 배포 절차입니다. 회원가입·모집·신청·팀 관리자 기능과 PostgreSQL 연결은 다음 구현 대상입니다.
+현재 포함된 기능은 서비스 소개 화면, 팀 URL 진입 안내, Cloudflare Worker, OCI용 회원·팀 API, 소셜 로그인 서버 코드, 자동 검사·배포 절차입니다. 실제 소셜 로그인은 제공자 앱·키와 약관·가입 완료 화면 준비 후 활성화합니다. 모집·경기 신청 화면은 아직 구현하지 않았습니다.
+
+회원·팀·가입 승인 흐름과 권한은 [데이터 설계 v1](docs/member-team-data-model.md), 적용 전 SQL과 검증 결과는 [database/README.md](database/README.md)에 정리했습니다. 운영 DB에는 정식 마이그레이션 001·002를 적용했습니다. 앱 전용 계정으로 권한·동시 승인·세션 통합 테스트를 통과했습니다. API 목록과 검증 범위는 [API 안내](docs/api.md), 서버 Stack은 [infra/api/README.md](infra/api/README.md)를 참고하세요.
 
 ## 실행
 
@@ -51,7 +53,7 @@ gh api user --jq .login
 
 ## Cloudflare와 배포
 
-웹 화면과 Worker를 하나의 배포 단위로 사용합니다. PostgreSQL은 서울 OCI 서버에 별도로 설치할 예정입니다. 현재 코드에는 DB 접속 정보가 없습니다.
+웹 화면과 Worker를 하나의 배포 단위로 사용합니다. PostgreSQL과 Node API는 서울 OCI에서 운영합니다. Worker는 API를 HTTPS로 전달하며 DB 자격 증명은 서버에만 둡니다. 현재 로컬 코드의 비밀 값은 Git에 포함하지 않습니다.
 
 처음에는 Workers 기본 주소에서 검증하고, 운영 주소는 `mefoot.i815.com`을 제안합니다. 이 문서 작성 시점에는 해당 서비스용 도메인 연결을 만들지 않았습니다. `i815.com`의 기존 Cloudflare DNS 관리는 그대로 사용합니다.
 
@@ -108,6 +110,8 @@ npm run deploy:staging -- --oauth
 팀 관심 등록은 바로 반영하고, 정식 팀원 가입은 관리자 승인 후 확정합니다. 경기의 용병 신청과 팀원 가입은 별도로 관리합니다. 공개 QR에는 관리자 권한이나 로그인 비밀 값을 넣지 않습니다.
 
 ## OCI 상태 확인
+
+OCI의 관리 기준과 Caddy Stack 설정은 [infra/README.md](infra/README.md)에 정리합니다. Portainer는 최초 구동용 독립 컨테이너로 두고, Caddy와 이후 앱은 Portainer Stacks에서 관리하는 구성을 준비 중입니다. 현재 Caddy Stack 전환은 아직 서버에서 확인되지 않았습니다.
 
 서버 변경은 운영자가 직접 실행합니다. 아래 명령은 **서울 서버에서** 현재 상태만 읽습니다. Docker 사용 권한이 없는 경우 기존 운영 방식에 맞게 실행합니다.
 

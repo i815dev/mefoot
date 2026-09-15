@@ -1,0 +1,23 @@
+# Only API runtime inputs enter the Docker build context.
+**
+!Dockerfile.api
+!package.json
+!package-lock.json
+!server/
+!server/**
+!database/
+!database/**
+
+# Keep credentials out even if a file is accidentally placed in an allowed tree.
+**/.env
+**/.env.*
+**/secrets
+**/secrets/**
+**/*.key
+**/*.pem
+**/*.p12
+**/*.jks
+**/*.keystore
+**/*.log
+**/node_modules
+**/node_modules/**
