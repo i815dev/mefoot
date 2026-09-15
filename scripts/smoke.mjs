@@ -41,14 +41,16 @@ async function verify() {
 }
 
 let lastError;
-for (let attempt = 0; attempt < 6; attempt++) {
+// A completed upload can briefly serve the previous deployment at the public URL.
+// Keep checking the exact version instead of accepting an older successful response.
+for (let attempt = 0; attempt < 12; attempt++) {
   try {
     await verify();
     console.log(`Verified web + Worker ${expected} on ${origin.origin} (${expectedEnv}). ${process.env.EXPECT_API === '1' ? 'API and database connection verified.' : 'Database connection was not checked.'} Real social login was not checked.`);
     process.exit(0);
   } catch (error) {
     lastError = error;
-    if (attempt < 5) await setTimeout(2000);
+    if (attempt < 11) await setTimeout(5000);
   }
 }
 throw lastError;
