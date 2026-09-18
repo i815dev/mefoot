@@ -231,8 +231,7 @@ function showPendingApplicant(root: HTMLElement, teamId: string, detail: TeamDet
   </section></main>`;
 
   const errorEl = root.querySelector('#pending-error') as HTMLElement;
-  root.querySelector('[data-action="withdraw"]')?.addEventListener('click', () => {
-    void (async () => {
+  root.querySelector('[data-action="withdraw"]')?.addEventListener('click', async () => {
     try {
       await api(`/api/teams/${encodeURIComponent(teamId)}/join-requests/${encodeURIComponent(req.id)}/withdraw`, {
         method: 'POST',
@@ -243,7 +242,6 @@ function showPendingApplicant(root: HTMLElement, teamId: string, detail: TeamDet
       errorEl.hidden = false;
       errorEl.textContent = error instanceof ApiError ? errorMessage(error.code) : '취소에 실패했어요.';
     }
-    })();
   });
   root.querySelector('[data-action="back"]')?.addEventListener('click', () => {
     void renderTeamPage(root, teamId);
